@@ -97,8 +97,8 @@
           itemsPerPage: dataTableOptions.itemsPerPage,
           page: dataTableOptions.page,
           search: this.search,
-          sortBy: dataTableOptions.sortBy[0],
-          typeSort: dataTableOptions.sortDesc ? 'DESC' : 'ASC',
+          orderKey: dataTableOptions.sortBy[0] ?? 'id',
+          orderType: dataTableOptions.sortBy[0] ? dataTableOptions.sortDesc ? 'DESC' : 'ASC' : 'DESC',
         }
 
         this.$getInvocesByPagination(pagination).then(response => {

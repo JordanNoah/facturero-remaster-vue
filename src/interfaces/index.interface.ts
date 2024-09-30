@@ -1,8 +1,75 @@
+export interface EmissionPoint {
+    id: number | null,
+    code: string,
+    establishment_id: number | null,
+    createdAt: string | null,
+    updatedAt: string | null,
+    deletedAt: string | null
+}
+
+export interface Establishment {
+    id: number | null,
+    uuid: string | null,
+    name: string,
+    address: string | null,
+    institution_id: number,
+    createdAt: string | null,
+    updatedAt: string | null,
+    deletedAt: string | null
+}
+
+export interface Organization {
+    id: number,
+    uuid: string,
+    name: string,
+    ruc: string,
+    address: string | null,
+    hasToAccounting: boolean,
+    abbreviation: string,
+    createdAt: string,
+    updatedAt: string,
+    deletedAt: string | null
+}
+
+export interface Customer {
+    id: number | null,
+    uuid: string | null,
+    fullName: string,
+    address: string | null,
+    identificationType: string,
+    identification: string,
+    emails: string[],
+    phones: string[],
+    createdAt: string | null,
+    updatedAt: string | null,
+    deletedAt: string | null
+}
+
+export interface ProductLabel {
+    uuid: string,
+    value_tag: string,
+}
+
+export interface Product {
+    id: number | null,
+    uuid: string,
+    name: string,
+    code: string,
+    tags: ProductLabel[],
+    price: string,
+    hasIva: boolean,
+    percentageCode: number | null,
+    institution_id: number,
+    createdAt: string,
+    updatedAt: string,
+    deletedAt: string | null
+}
+
 export interface Pagination {
     page: number
     itemsPerPage: number
-    sortBy: string
-    typeSort: string
+    orderKey: string
+    orderType: string
     search?: string
 }
 
@@ -50,17 +117,18 @@ export interface Compensation {
 }
 
 export interface Payment {
-    paymentMethod: string,
-    total: string,
-    term: string,
-    timeUnit: string
+    uniqueId: number,
+    paymentMethod: string | null,
+    total: string | null,
+    term: string | null,
+    timeUnit: string | null
 }
 
 export interface InvoiceInfo {
     issueDate:string | null,
     establishmentAddress:string | null,
     specialTaxpayer:string | null,
-    accountingObligation:string | null,
+    accountingObligation:boolean,
     foreignTrade:string | null,
     incoTermInvoice:string | null,
     incoTermLocation:string | null,
@@ -112,14 +180,14 @@ export interface DetailAdditionalDetail {
 
 export interface Detail {
     mainCode: string,
-    auxiliaryCode: string,
-    description: string,
-    unitOfMeasure: string,
-    quantity: string,
-    unitPrice: string,
-    priceWithoutSubsidy: string,
-    discount: string,
-    totalPriceWithoutTax: string,
+    auxiliaryCode: string | null,
+    description: string | null,
+    unitOfMeasure: string | null,
+    quantity: string | null,
+    unitPrice: string | null,
+    priceWithoutSubsidy: string | null,
+    discount: string | null,
+    totalPriceWithoutTax: string | null,
     additionalDetails: DetailAdditionalDetail[],
     taxes: DetailTax[]
 }
@@ -161,8 +229,8 @@ export interface WithHolding {
 }
 
 export interface AdditionalDetail {
-    name: string,
-    value: string
+    name: string | null,
+    value: string | null
 }
 
 export interface Invoice {
@@ -176,12 +244,13 @@ export interface Invoice {
 
 export interface DetailField {
     ref: string,
-    value: number | null,
+    value: string | number | null,
     editable: boolean,
     error: null | string,
 }
 
 export interface DetailFieldItems {
+    uniqueId: number,
     code: DetailField,
     quantity: DetailField,
     description: DetailField,
@@ -189,4 +258,8 @@ export interface DetailFieldItems {
     unitPrice: DetailField,
     discount: DetailField,
     totalPrice: DetailField,
+    productObject: Product | null,
+    posibleProducts: Product[],
+    posibleProductLoading: boolean,
+    searchProduct: string
 }

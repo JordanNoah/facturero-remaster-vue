@@ -19,7 +19,13 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    '/customers/': RouteRecordInfo<'/customers/', '/customers', Record<never, never>, Record<never, never>>,
+    '/customers/[uuid]': RouteRecordInfo<'/customers/[uuid]', '/customers/:uuid', { uuid: ParamValue<true> }, { uuid: ParamValue<false> }>,
+    '/establishments/': RouteRecordInfo<'/establishments/', '/establishments', Record<never, never>, Record<never, never>>,
+    '/establishments/[uuid]': RouteRecordInfo<'/establishments/[uuid]', '/establishments/:uuid', { uuid: ParamValue<true> }, { uuid: ParamValue<false> }>,
     '/invoices/': RouteRecordInfo<'/invoices/', '/invoices', Record<never, never>, Record<never, never>>,
     '/invoices/[uuid]': RouteRecordInfo<'/invoices/[uuid]', '/invoices/:uuid', { uuid: ParamValue<true> }, { uuid: ParamValue<false> }>,
+    '/products/': RouteRecordInfo<'/products/', '/products', Record<never, never>, Record<never, never>>,
+    '/products/[uuid]': RouteRecordInfo<'/products/[uuid]', '/products/:uuid', { uuid: ParamValue<true> }, { uuid: ParamValue<false> }>,
   }
 }

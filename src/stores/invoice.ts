@@ -1,17 +1,17 @@
-import { DetailField, DetailFieldItems, Invoice, InvoiceInfo } from '@/interfaces/index.interface'
+import { AdditionalDetail, Customer, DetailField, DetailFieldItems, Invoice, InvoiceInfo, Organization, Payment } from '@/interfaces/index.interface'
 import { defineStore } from 'pinia'
 
 type AllowedInvoiceInfoField = keyof InvoiceInfo
 type FieldName = 'code' | 'quantity' | 'description' | 'additionalDetail' | 'unitPrice' | 'discount' | 'totalPrice';
 
 export const useInvoiceStore = defineStore('invoice', {
-  state: (): { invoiceEditing: Invoice, detailFields: DetailFieldItems[] } => ({
+  state: (): { invoiceEditing: Invoice, detailFields: DetailFieldItems[], establishment: string, emissionPoint: string } => ({
     invoiceEditing: {
       invoiceInfo: {
-        issueDate: null,
+        issueDate: new Date().toLocaleString(),
         establishmentAddress: null,
         specialTaxpayer: null,
-        accountingObligation: null,
+        accountingObligation: false,
         foreignTrade: null,
         incoTermInvoice: null,
         incoTermLocation: null,
@@ -67,28 +67,25 @@ export const useInvoiceStore = defineStore('invoice', {
       reimbursements: [],
       withHoldings: [],
     },
-    detailFields: [
-      {
-        code: { ref: '0/code', value: null, editable: true, error: null },
-        quantity: { ref: `0/quantity`, value: null, editable: true, error: null },
-        description: { ref: `0/description`, value: null, editable: true, error: null },
-        additionalDetail: { ref: `0/additionalDetail`, value: null, editable: true, error: null },
-        unitPrice: { ref: `0/unitPrice`, value: null, editable: true, error: null },
-        discount: { ref: `0/discount`, value: null, editable: true, error: null },
-        totalPrice: { ref: `0/totalPrice`, value: 0.0000, editable: false, error: null },
-      },
-    ],
+    detailFields: [],
+    establishment: '001',
+    emissionPoint: '001'
   }),
   actions: {
-    setInvoiceInfoData (key: AllowedInvoiceInfoField, value: InvoiceInfo[AllowedInvoiceInfoField]) {
-      // Verifica si el valor es un string o null (para campos de texto)
-      if (typeof value === 'string' || value === null) {
-        this.invoiceEditing.invoiceInfo[key] = value as any
-      } else if (Array.isArray(value)) {
-        this.invoiceEditing.invoiceInfo[key] = value as any
-      } else {
-        console.error(`Tipo de valor no manejado para la clave ${key}:`, value)
+    setInvoiceOrganizationDataToFinancialInformation (organization: Organization) {
+      this.invoiceEditing.financialInformation.businessName = organization.name
+      this.invoiceEditing.financialInformation.taxId = organization.ruc
+      this.invoiceEditing.financialInformation.headquartersAddress = organization.address
+      this.invoiceEditing.invoiceInfo.accountingObligation = organization.hasToAccounting
+    },
+    getInvoiceFinancialInformation () {
+      let organization = {
+        businessName: this.invoiceEditing.financialInformation.businessName,
+        taxId: this.invoiceEditing.financialInformation.taxId,
+        headquartersAddress: this.invoiceEditing.financialInformation.headquartersAddress,
+        accountingObligation: this.invoiceEditing.invoiceInfo.accountingObligation
       }
+      return organization
     },
     setInvoiceDetailFields (details: any) {
       this.invoiceEditing.details = details
@@ -106,13 +103,18 @@ export const useInvoiceStore = defineStore('invoice', {
     addDetailField () {
       const date = Math.floor(new Date().getTime() / 1000)
       const newField = {
-        code: { ref: `${date}/code`, value: null, editable: true, error: null },
-        quantity: { ref: `${date}/quantity`, value: null, editable: true, error: null },
+        uniqueId: date,
+        code: { ref: `${date}/code`, value: null, editable: true, error: null, },
+        quantity: { ref: `${date}/quantity`, value: 0, editable: true, error: null },
         description: { ref: `${date}/description`, value: null, editable: true, error: null },
         additionalDetail: { ref: `${date}/additionalDetail`, value: null, editable: true, error: null },
-        unitPrice: { ref: `${date}/unitPrice`, value: null, editable: true, error: null },
-        discount: { ref: `${date}/discount`, value: null, editable: true, error: null },
+        unitPrice: { ref: `${date}/unitPrice`, value: 0.0000, editable: true, error: null },
+        discount: { ref: `${date}/discount`, value: 0.0000, editable: true, error: null },
         totalPrice: { ref: `${date}/totalPrice`, value: 0.0000, editable: false, error: null },
+        productObject: null,
+        posibleProducts: [],
+        posibleProductLoading: false,
+        searchProduct: ''
       }
       this.detailFields.push(newField)
     },
@@ -120,9 +122,12 @@ export const useInvoiceStore = defineStore('invoice', {
       let hasEmptyField = true
       for (let i = 0; i < Object.values(detailFieldItems).length; i++) {
         const element = Object.values(detailFieldItems)[i]
-        if (element.value != null && element.value !== '' && element.value !== 0 && element.value !== undefined) {
-          hasEmptyField = false
-          break
+        const key = Object.keys(detailFieldItems)[i]
+        if (key === 'code' || key === 'quantity' || key === 'description' || key === 'additionalDetail' || key === 'unitPrice' || key === 'discount' || key === 'totalPrice') {
+          if (element.value != null && element.value !== '' && element.value !== 0 && element.value !== undefined) {
+            hasEmptyField = false
+            break
+          }
         }
       }
       return hasEmptyField
@@ -135,7 +140,104 @@ export const useInvoiceStore = defineStore('invoice', {
       } else {
         this.detailFields.splice(index, 1)
       }
-      console.log(index)
     },
+    getEstablishment() {
+      return this.establishment
+    },
+    getEmissionPoint() {
+      return this.emissionPoint
+    },
+    getEmissionDate() {
+      return this.invoiceEditing.invoiceInfo.issueDate
+    },
+    getAdditionalDetails() {
+      return this.invoiceEditing.additionalDetails
+    },
+    setClientDataToInvoice (client: Customer | null) {
+      if (client) {
+        this.invoiceEditing.invoiceInfo.buyerBusinessName = client.fullName
+        this.invoiceEditing.invoiceInfo.buyerIdentification = client.identification
+        this.invoiceEditing.invoiceInfo.buyerAddress = client.address
+        this.invoiceEditing.invoiceInfo.buyerIdentificationType = client.identificationType
+      }else{
+        this.invoiceEditing.invoiceInfo.buyerBusinessName = null
+        this.invoiceEditing.invoiceInfo.buyerIdentification = null
+        this.invoiceEditing.invoiceInfo.buyerAddress = null
+        this.invoiceEditing.invoiceInfo.buyerIdentificationType = null
+      }
+    },
+    checkIfNeedNewDetailField () {
+      const detailField = this.detailFields[this.detailFields.length - 1]
+      if (!this.allEmptyField(detailField)) {
+        this.addDetailField()
+      }
+    },
+    addAdditionalDetail () {
+      const newAdditionalDetail:AdditionalDetail = {name: null, value: null}
+      this.invoiceEditing.additionalDetails.push(newAdditionalDetail)
+    },
+    removeAdditionalDetail(index: number) {
+      this.invoiceEditing.additionalDetails.splice(index, 1)
+    },
+    checkLastAdditionalDetail () {
+      const lastAdditionalDetail = this.invoiceEditing.additionalDetails[this.invoiceEditing.additionalDetails.length - 1]
+      
+      if (lastAdditionalDetail.name !== null || lastAdditionalDetail.value !== null) {
+        this.addAdditionalDetail()
+      }
+    },
+    getPaymentMethods () {
+      return this.invoiceEditing.invoiceInfo.payments
+    },
+    addPaymentMethod () {
+      this.invoiceEditing.invoiceInfo.payments.push({
+        uniqueId: Math.floor(new Date().getTime() / 1000),
+        paymentMethod: null,
+        term: null,
+        timeUnit: null,
+        total: null
+      })
+    },
+    checkIfNeedNewPaymentMethod () {
+      if (this.invoiceEditing.invoiceInfo.payments.length === 0) {
+        this.addPaymentMethod()
+      } else {
+        const paymentMethod = this.invoiceEditing.invoiceInfo.payments[this.invoiceEditing.invoiceInfo.payments.length - 1]
+        if (paymentMethod.paymentMethod !== null || paymentMethod.term !== null || paymentMethod.timeUnit !== null || paymentMethod.total !== null) {
+          this.addPaymentMethod()
+        }
+      }
+    },
+    removePaymentMethod (item: Payment) {
+      const index = this.invoiceEditing.invoiceInfo.payments.findIndex(payment => payment.uniqueId === item.uniqueId)
+      this.invoiceEditing.invoiceInfo.payments.splice(index, 1)
+      if (this.invoiceEditing.invoiceInfo.payments.length === 0) {
+        this.addPaymentMethod()
+      }
+    },
+    mapDetailFieldsToInvoiceNeeds () {      
+      for (let i = 0; i < this.detailFields.length; i++) {
+        const detailField = this.detailFields[i]
+        this.invoiceEditing.details.push({
+          auxiliaryCode: detailField.code.value ? detailField.code.value.toString() : null,
+          description: detailField.description.value ? detailField.description.value.toString() : null,
+          discount: detailField.discount.value ? detailField.discount.value.toString() : null,
+          quantity: detailField.quantity.value ? detailField.quantity.value.toString() : null,
+          unitPrice: detailField.unitPrice.value ? Number(detailField.unitPrice.value).toFixed(2) : null,
+          mainCode: (detailField.code.value!).toString(),
+          priceWithoutSubsidy: Number(detailField.totalPrice.value).toFixed(2),
+          totalPriceWithoutTax: Number(detailField.totalPrice.value).toFixed(2),
+          additionalDetails: [],
+          taxes: [],
+          unitOfMeasure: '--'
+        })
+      }
+    },
+    setInvoiceTotals () {
+      for (let i = 0; i < this.invoiceEditing.details.length; i++) {
+        const detailField = this.invoiceEditing.details[i]
+        
+      }
+    }
   },
 })

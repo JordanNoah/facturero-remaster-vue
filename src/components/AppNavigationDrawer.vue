@@ -19,6 +19,9 @@
     data: () => ({
       navigationItems: [
         { title: 'Invoice', icon: 'mdi-invoice-list-outline', to: '/invoices' },
+        { title: 'Products', icon: 'mdi-package-variant-closed', to: '/products' },
+        { title: 'Customers', icon: 'mdi-account-group', to: '/customers' },
+        { title: 'Establishments', icon: 'mdi-domain', to: '/establishments' },
       ],
     }),
   }
